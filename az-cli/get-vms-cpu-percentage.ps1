@@ -46,38 +46,3 @@ foreach ($vmId in $vmIds) {
     write-Output "VM: $vmName"
 }
 $vmsMaxCPU | Sort-Object -Property 'cpuMax %' -Descending
-
-foreach ($vmId in $vmIds) {
-    $vmName=$vmId.Split("/")[-1]
-    $ds = az monitor metrics list --resource $vmId `
-        --metrics "Percentage CPU" `
-        --aggregation maximum `
-        --start-time $startDate `
-        --end-time $endDate `
-        --interval PT1H `
-        --query '{max:value[].timeseries[].data[].maximum}' | ConvertFrom-Json
-    
-    $sumPercentage=0
-    foreach ($value in $ds.max) {
-        $sumPercentage+=$value
-    }
-    try {
-        $mediaMax=0
-        $mediaMax=($sumPercentage/$ds.max.Count).tostring("##.##")
-        $vm = [PSCustomObject]@{
-            vmName = "$vmName"
-            "cpuMax %" = [System.Int32]$mediaMax
-        }
-        $vmsMaxCPU += $vm
-
-    }
-    catch {
-        $vm = [PSCustomObject]@{
-            vmName = "$vmName"
-            "cpuMax %" = [System.Int32]0.0
-        }
-        $vmsMaxCPU += $vm
-
-    }
-}
-$vmsMaxCPU | Sort-Object -Property cpuMax -Descending
