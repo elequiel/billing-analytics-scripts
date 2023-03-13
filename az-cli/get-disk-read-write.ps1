@@ -51,4 +51,5 @@ foreach($diskId in $diskIds){
     #Write-Output "$diskName $mediaMaxWrite $mediaMaxRead"
 }
 
-$disksOutput | Sort-Object -Property cpuMax -Descending
+$disksOutput | Sort-Object -Property mediaMaxWrite -Descending
+$disksOutput | Sort-Object -Property mediaMaxRead -Descending
