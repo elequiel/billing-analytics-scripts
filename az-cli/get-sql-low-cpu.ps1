@@ -39,7 +39,7 @@ function Get-CPUDatabaseVcore {
 function Get-CPUDatabaseDTU {
     param ($database)
 
-    $ds = az monitor metrics list --resource $dbDTU `
+    $ds = az monitor metrics list --resource $database.id `
         --metrics "dtu_consumption_percent" `
         --aggregation Maximum `
         --start-time $startDate `
@@ -71,34 +71,37 @@ foreach ($server in $sqlServers) {
 
         }
         {$databases | Where-Object { $_.requestedServiceObjectiveName -like "GP_G*" }} {
+            echo "Database: "$_.name
             $mediaCPU = Get-CPUDatabaseVcore -database $_
-            $mediaCPU
             $db = [PSCustomObject]@{
                 "DB Name" = $_.name
-                "Server Name" = $_.id.Split("/")[8] 
+                "Server Name" = $_.id.Split("/")[8]
                 "SKU" = "GeneralPurpose"
+                "Capacity" = $_.sku.capacity
                 "CPU %" = [System.Int32]$mediaCPU
                 }
             $sqlBadatabesOutput += $db
         }
         {$databases | Where-Object { $_.requestedServiceObjectiveName -like "GP_S*" }} {
+            echo "Database: "$_.name
             $mediaCPU = Get-CPUDatabaseVcore -database $_
-            $mediaCPU
             $db = [PSCustomObject]@{
                 "DB Name" = $_.name
                 "Server Name" = $_.id.Split("/")[8] 
                 "SKU" = "GeneralPurpose Serverless"
+                "Capacity" = $_.sku.capacity
                 "CPU %" = [System.Int32]$mediaCPU
                 }
             $sqlBadatabesOutput += $db
         }
         {$databases | Where-Object { $_.requestedServiceObjectiveName -like "Basic" }} {
+            echo "Database: "$_.name
             $mediaCPU = Get-CPUDatabaseDTU -database $_
-            $mediaCPU
             $db = [PSCustomObject]@{
                 "DB Name" = $_.name
                 "Server Name" = $_.id.Split("/")[8] 
                 "SKU" = "Basic"
+                "Capacity" = $_.sku.capacity
                 "CPU %" = [System.Int32]$mediaCPU
                 }
             $sqlBadatabesOutput += $db
@@ -106,4 +109,4 @@ foreach ($server in $sqlServers) {
     }
 }
 
-$sqlBadatabesOutput | Sort-Object -Property 'CPU %' -Descending
+$sqlBadatabesOutput | Sort-Object -Property 'CPU %' -Descending | Format-Table
